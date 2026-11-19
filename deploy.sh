@@ -1,6 +1,6 @@
 #!/bin/sh
 # Cloudenza Notes: non-disruptive installer for an existing nginx-selfsteal Docker volume.
-# Does not modify DNS, nginx configs, Docker Compose, certificates, Reality, ports or running services.
+# install: files only. prepare-http/activate: explicit nginx virtual-host changes after validation.
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -18,11 +18,13 @@ usage() {
 Usage:
   sh deploy.sh inspect [--domain HOST] [--ip IPv4] [--container NAME]
   sudo sh deploy.sh install [--webroot HOST_PATH] [--container NAME]
+  sudo sh deploy.sh prepare-http --domain HOST
   sudo sh deploy.sh activate --domain HOST --cert-file FULLCHAIN_FILENAME --key-file PRIVKEY_FILENAME
   sh deploy.sh help
 
-This only installs site files into <existing nginx html mount>/cloudenza-notes.
-It does NOT configure a new public hostname or SNI.
+The installer writes only into <existing nginx html mount>/cloudenza-notes.
+prepare-http adds an isolated port-80 nginx vhost for HTTP-01 validation.
+activate adds an isolated TLS vhost. Neither configures DNS, Reality or public listener routing.
 
 Examples:
   sudo sh deploy.sh inspect --domain YOUR_SUBDOMAIN --ip YOUR_SECONDARY_IP
@@ -175,10 +177,71 @@ install_site() {
 }
 
 
+validate_domain() {
+  [ -n "$DOMAIN" ] || die 'Supply --domain YOUR_NEW_SUBDOMAIN'
+  case "$DOMAIN" in
+    *[!A-Za-z0-9.-]*|.*|*..*|*.) die "Invalid domain: $DOMAIN" ;;
+  esac
+  case "$DOMAIN" in
+    *.*) : ;;
+    *) die "The domain must contain a dot: $DOMAIN" ;;
+  esac
+}
+config_host_dir() {
+  if ! docker_running; then die "Container $CONTAINER must be running"; fi
+  HOST_DIR=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/etc/nginx/conf.d"}}{{println .Source}}{{end}}{{end}}' "$CONTAINER" | sed -n '1p')
+  [ -d "$HOST_DIR" ] || die 'Could not find the existing nginx conf.d bind mount'
+  printf '%s\n' "$HOST_DIR"
+}
+prepare_http() {
+  [ "$(id -u)" -eq 0 ] || die 'Requires root: sudo sh deploy.sh prepare-http --domain HOST'
+  validate_domain
+  docker_running || die "Container $CONTAINER must be running"
+  docker exec "$CONTAINER" test -s /var/www/html/cloudenza-notes/index.html 2>/dev/null ||
+    die 'Site not installed; run sudo sh deploy.sh install first'
+  CONF_HOST=$(config_host_dir)
+  CONFIG="$CONF_HOST/cloudenza-notes-http-$DOMAIN.conf"
+  [ ! -L "$CONFIG" ] || die "Refusing to overwrite symlink: $CONFIG"
+  BACKUP=""
+  if [ -e "$CONFIG" ]; then
+    [ -f "$CONFIG" ] || die "Not a regular file: $CONFIG"
+    BACKUP="$CONFIG.backup-$(date -u +%Y%m%dT%H%M%SZ)"
+    cp "$CONFIG" "$BACKUP"
+  fi
+  cat > "$CONFIG" <<EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    root /var/www/html/cloudenza-notes;
+    index index.html;
+
+    location ^~ /.well-known/acme-challenge/ {
+        default_type text/plain;
+        try_files \$uri =404;
+    }
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF
+  chmod 644 "$CONFIG"
+  if ! docker exec "$CONTAINER" nginx -t; then
+    if [ -n "$BACKUP" ]; then cp "$BACKUP" "$CONFIG"; else rm -f "$CONFIG"; fi
+    die 'nginx -t failed; original vhost restored; no reload'
+  fi
+  if ! docker exec "$CONTAINER" nginx -s reload; then
+    if [ -n "$BACKUP" ]; then cp "$BACKUP" "$CONFIG"; else rm -f "$CONFIG"; fi
+    die 'nginx reload failed; previous configuration file restored'
+  fi
+  printf 'HTTP vhost ready for %s and ACME HTTP-01 challenges.\n' "$DOMAIN"
+  printf 'Config: %s\n' "$CONFIG"
+  printf 'Next: validate HTTP on the secondary IPv4 and issue a TLS certificate.\n'
+}
+
 activate_vhost() {
   [ "$(id -u)" -eq 0 ] || die 'Activation requires root: sudo sh deploy.sh activate ...'
-  [ -n "$DOMAIN" ] || die 'Supply --domain NEW_HOSTNAME'
-  case "$DOMAIN" in *[!A-Za-z0-9.-]*|.*|*..*|*.) die "Invalid domain: $DOMAIN" ;; esac
+  validate_domain
   [ -n "$CERT_FILE" ] && [ -n "$KEY_FILE" ] || die 'Supply --cert-file and --key-file (file names within the already mounted nginx SSL directory)'
   case "$CERT_FILE" in *[!A-Za-z0-9._-]*|.|..) die 'Invalid certificate file name' ;; esac
   case "$KEY_FILE" in *[!A-Za-z0-9._-]*|.|..) die 'Invalid private key file name' ;; esac
@@ -213,7 +276,7 @@ activate_vhost() {
 
   cat > "$CONFIG" <<EOF
 server {
-    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol http2;
     server_name $DOMAIN;
 
     ssl_certificate /etc/nginx/ssl/$CERT_FILE;
@@ -249,6 +312,7 @@ EOF
 case "$ACTION" in
   inspect) inspect ;;
   install) install_site ;;
+  prepare-http) prepare_http ;;
   activate) activate_vhost ;;
   help) usage ;;
   *) usage; die "Unknown action: $ACTION" ;;
