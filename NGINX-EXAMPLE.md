@@ -81,9 +81,6 @@ server {
         try_files $uri $uri/ =404;
     }
 
-    location ~ /\\. {
-        return 404;
-    }
 }
 ```
 
