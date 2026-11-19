@@ -9,6 +9,8 @@ CONTAINER="${CONTAINER:-nginx-selfsteal}"
 WEBROOT="${WEBROOT:-}"
 DOMAIN=""
 NEW_IP=""
+CERT_FILE=""
+KEY_FILE=""
 ACTION=""
 
 usage() {
@@ -16,6 +18,7 @@ usage() {
 Usage:
   sh deploy.sh inspect [--domain HOST] [--ip IPv4] [--container NAME]
   sudo sh deploy.sh install [--webroot HOST_PATH] [--container NAME]
+  sudo sh deploy.sh activate --domain HOST --cert-file FULLCHAIN_FILENAME --key-file PRIVKEY_FILENAME
   sh deploy.sh help
 
 This only installs site files into <existing nginx html mount>/cloudenza-notes.
@@ -41,6 +44,8 @@ while [ "$#" -gt 0 ]; do
     --webroot) [ "$#" -ge 2 ] || die '--webroot needs a value'; WEBROOT="$2"; shift 2 ;;
     --domain) [ "$#" -ge 2 ] || die '--domain needs a value'; DOMAIN="$2"; shift 2 ;;
     --ip) [ "$#" -ge 2 ] || die '--ip needs a value'; NEW_IP="$2"; shift 2 ;;
+    --cert-file) [ "$#" -ge 2 ] || die '--cert-file needs a filename'; CERT_FILE="$2"; shift 2 ;;
+    --key-file) [ "$#" -ge 2 ] || die '--key-file needs a filename'; KEY_FILE="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "Unknown option: $1" ;;
   esac
@@ -169,9 +174,82 @@ install_site() {
   printf 'and a valid certificate, DNS and your Selfsteal SNI route (see NGINX-EXAMPLE.md).\n'
 }
 
+
+activate_vhost() {
+  [ "$(id -u)" -eq 0 ] || die 'Activation requires root: sudo sh deploy.sh activate ...'
+  [ -n "$DOMAIN" ] || die 'Supply --domain NEW_HOSTNAME'
+  case "$DOMAIN" in *[!A-Za-z0-9.-]*|.*|*..*|*.) die "Invalid domain: $DOMAIN" ;; esac
+  [ -n "$CERT_FILE" ] && [ -n "$KEY_FILE" ] || die 'Supply --cert-file and --key-file (file names within the already mounted nginx SSL directory)'
+  case "$CERT_FILE" in *[!A-Za-z0-9._-]*|.|..) die 'Invalid certificate file name' ;; esac
+  case "$KEY_FILE" in *[!A-Za-z0-9._-]*|.|..) die 'Invalid private key file name' ;; esac
+  docker_running || die "Container $CONTAINER must be running"
+  docker exec "$CONTAINER" test -s /var/www/html/cloudenza-notes/index.html 2>/dev/null ||
+    die 'Site is not visible inside nginx: run install first'
+
+  CONF_HOST=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/etc/nginx/conf.d"}}{{println .Source}}{{end}}{{end}}' "$CONTAINER" | sed -n '1p')
+  SSL_HOST=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/etc/nginx/ssl"}}{{println .Source}}{{end}}{{end}}' "$CONTAINER" | sed -n '1p')
+  [ -d "$CONF_HOST" ] && [ -d "$SSL_HOST" ] ||
+    die 'Cannot discover existing conf.d / ssl bind mounts. Configure the vhost manually.'
+  [ -f "$SSL_HOST/$CERT_FILE" ] && [ -f "$SSL_HOST/$KEY_FILE" ] ||
+    die 'Certificate and key must already exist inside the currently mounted host SSL directory'
+
+  if have openssl; then
+    openssl x509 -in "$SSL_HOST/$CERT_FILE" -noout -checkhost "$DOMAIN" >/dev/null 2>&1 ||
+      die 'Certificate is unreadable or does not cover the requested hostname'
+  else
+    warn 'openssl unavailable; confirm certificate SAN manually'
+  fi
+
+  grep -REq 'listen[[:space:]]+unix:/dev/shm/nginx[.]sock.*ssl.*proxy_protocol' "$CONF_HOST" ||
+    die 'This installation does not clearly use the expected PROXY-protocol Unix listener. Do not apply this template.'
+
+  CONFIG="$CONF_HOST/cloudenza-notes-$DOMAIN.conf"
+  BACKUP=""
+  if [ -e "$CONFIG" ]; then
+    [ -f "$CONFIG" ] && [ ! -L "$CONFIG" ] || die "Unsafe config path: $CONFIG"
+    BACKUP="$CONFIG.backup-$(date -u +%Y%m%dT%H%M%SZ)"
+    cp "$CONFIG" "$BACKUP"
+  fi
+
+  cat > "$CONFIG" <<EOF
+server {
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
+    server_name $DOMAIN;
+
+    ssl_certificate /etc/nginx/ssl/$CERT_FILE;
+    ssl_certificate_key /etc/nginx/ssl/$KEY_FILE;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    root /var/www/html/cloudenza-notes;
+    index index.html;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF
+  chmod 644 "$CONFIG"
+  if ! docker exec "$CONTAINER" nginx -t; then
+    if [ -n "$BACKUP" ]; then cp "$BACKUP" "$CONFIG"; else rm -f "$CONFIG"; fi
+    die 'nginx -t failed; original vhost restored and nginx was not reloaded'
+  fi
+  if ! docker exec "$CONTAINER" nginx -s reload; then
+    if [ -n "$BACKUP" ]; then cp "$BACKUP" "$CONFIG"; else rm -f "$CONFIG"; fi
+    docker exec "$CONTAINER" nginx -t || true
+    die 'nginx reload returned an error; file restored, investigate running configuration'
+  fi
+  printf 'Nginx vhost enabled: %s\n' "$DOMAIN"
+  printf 'Config: %s\n' "$CONFIG"
+  printf 'NOTE: DNS, external IPv4 listeners and Reality SNI routing are NOT changed.\n'
+}
+
 case "$ACTION" in
   inspect) inspect ;;
   install) install_site ;;
+  activate) activate_vhost ;;
   help) usage ;;
   *) usage; die "Unknown action: $ACTION" ;;
 esac
