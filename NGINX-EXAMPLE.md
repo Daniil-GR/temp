@@ -33,6 +33,23 @@ Create an **A record** for your chosen hostname, pointing to the secondary IPv4.
 
 A certificate for the previous hostname is not sufficient unless its SAN explicitly includes the new hostname.
 
+With the site files installed and after verifying the DNS A record, prepare the new HTTP vhost without altering the existing default server:
+
+```sh
+sudo sh deploy.sh prepare-http --domain YOUR_NEW_SUBDOMAIN
+curl -I --resolve YOUR_NEW_SUBDOMAIN:80:YOUR_SECONDARY_IP http://YOUR_NEW_SUBDOMAIN/
+```
+
+The command writes a dedicated host-matching port-80 configuration to the existing nginx conf.d mount, runs `nginx -t` and reloads nginx. It serves the real site as well as ACME HTTP-01 challenge files using the current webroot. If you use HTTP-01 certificate issuance, the hostname must be publicly reachable from the certificate authority on TCP/80.
+
+A common webroot issuance method on a system with Certbot installed is:
+
+```sh
+sudo certbot certonly --webroot -w /opt/nginx-selfsteal/html/cloudenza-notes -d YOUR_NEW_SUBDOMAIN
+```
+
+Before TLS activation, ensure the issued certificate and private key are available *inside* the existing nginx `/etc/nginx/ssl` mount. If you copy them there, add a deployment hook to refresh both files and reload nginx upon renewal. Simply copying once does not automate certificate renewal.
+
 Use your existing certificate manager, or issue a new certificate after the hostname's HTTP-01 challenge is correctly served over port 80. Another option is DNS-01 if you manage the DNS zone. Do not expect the certificate to be issued without domain ownership validation.
 
 For an existing Docker nginx volume mapping `./ssl:/etc/nginx/ssl`, add the new PEM files into the existing host-side `ssl` directory, with restrictive key permissions. Arrange renewal/reload separately.
@@ -64,7 +81,7 @@ For a Selfsteal nginx that already listens on the shared Unix TLS socket with PR
 
 ```nginx
 server {
-    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol http2;
     server_name YOUR_NEW_SUBDOMAIN;
 
     ssl_certificate     /etc/nginx/ssl/notes-fullchain.pem;
