@@ -91,6 +91,17 @@ The `proxy_protocol` token must match the existing Selfsteal routing. Some insta
 
 Do not assume that Docker port 80 is exposed on the new IP. Inspect existing port bindings. If the old container publishes only the original address, account for that when setting up an HTTP-01 challenge.
 
+If the node uses the documented Unix socket with PROXY protocol and the certificate is already in the existing SSL volume, the installer can create, test and reload this vhost automatically:
+
+```sh
+sudo sh deploy.sh activate \
+  --domain YOUR_NEW_SUBDOMAIN \
+  --cert-file notes-fullchain.pem \
+  --key-file notes-privkey.pem
+```
+
+This command will refuse to run if it cannot verify the expected socket or find a certificate matching the hostname. It does not provision or renew the certificate.
+
 ## 5. Reality / Selfsteal ingress
 
 The public TCP/443 listener is often owned by the existing Reality/rw-core process rather than nginx. This means adding a normal nginx `listen 202.x.x.x:443` may conflict. Configure the existing ingress to accept the chosen domain/SNI and forward appropriate web traffic to the correct nginx TLS listener, **using the active installation's actual target and xver**. Avoid starting a second TLS listener on an occupied IP:port.
