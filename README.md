@@ -10,6 +10,22 @@ A small, real, English-language informational website about web fundamentals: DN
 - `deploy.sh` — inspect the Selfsteal layout, install site files and optionally activate a separate nginx TLS virtual host after you supply a valid certificate
 - `NGINX-EXAMPLE.md` — an example of a vhost, to adapt after inspecting the node
 
+## Editorial scope
+
+The four concise articles combine definitions, practical examples and links to primary RFCs. They are intentionally not presented as original research, laboratory measurements or commercial service reports. The browser check reports a single observed request, not ongoing uptime.
+
+## Updating existing deployed files
+
+For an existing deployment with a configured nginx virtual host:
+
+```sh
+cd /root/temp
+git pull --ff-only
+sudo sh deploy.sh install
+```
+
+Only static files are updated; existing nginx, TLS, DNS and Reality configurations remain unchanged. The installer backs up the prior site directory before replacing its files.
+
 ## Local preview
 
 ```sh
