@@ -93,6 +93,10 @@ kbd{background:var(--surface2);color:var(--muted);border:1px solid var(--line);b
 .card-body p{font-size:12px;line-height:1.7;color:var(--muted);min-height:84px}
 .card-tags{display:flex;flex-wrap:wrap;gap:5px}
 .card-tags span{font-size:10px;border:1px solid var(--line);padding:3px 7px;border-radius:2px;color:var(--muted)}
+.article-open{font:700 10px var(--text);letter-spacing:.5px;color:var(--accent);margin-top:20px;display:inline-flex;align-items:center;gap:9px;border-bottom:1px solid var(--accent);padding-bottom:5px}
+.article-open span{font-size:14px}.article-open:hover{gap:13px}
+.library-footnote{font:600 10px var(--text);letter-spacing:1.15px;color:var(--muted);padding-top:20px;margin-bottom:0;text-align:center}
+
 .no-results{text-align:center;padding:32px;color:var(--muted);background:var(--surface)}
 .reading{display:grid;grid-template-columns:260px minmax(0,1fr);gap:60px;padding:43px 0 0;border-top:1px solid var(--line);max-width:1060px}
 .read-aside{display:flex;flex-direction:column;align-items:start;gap:16px;color:var(--muted)}
