@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Learn HTTP cache freshness, Cache-Control, validators, ETag, 304 responses and private versus shared caches.">
+  <meta name="theme-color" content="#f5f3ee">
+  <title>The logic of HTTP caching — Cloudenza Notes</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/article.css">
+  <script defer src="../assets/article.js"></script>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <a class="skip" href="#article-content">Skip to article</a>
+  <div class="article-shell">
+    <header class="article-header">
+      <a class="brand" href="../index.html" aria-label="Cloudenza Notes home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>cloudenza<span class="brand-dot">.</span><small>NOTES / WEB REFERENCE</small></span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="../index.html#library">Library</a>
+        <a href="../index.html#toolkit">Tools</a>
+        <a href="../index.html#about">About</a>
+      </nav>
+      <div class="article-utility">
+        <a class="article-back" href="../index.html#library">← All guides</a>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme"><span class="theme-icon" aria-hidden="true">◐</span></button>
+      </div>
+    </header>
+    <main id="article-content">
+      <header class="article-hero">
+        <nav class="article-breadcrumb" aria-label="Breadcrumb">
+          <a href="../index.html">Cloudenza Notes</a> <span>/</span>
+          <a href="../index.html#library">Library</a> <span>/</span>
+          Performance
+        </nav>
+        <div class="article-hero-grid">
+          <div>
+            <div class="article-category">FIELD GUIDE 03 / PERFORMANCE</div>
+            <h1>The logic of HTTP caching<span class="accent">.</span></h1>
+            <p class="article-deck">Caching is not simply saving a copy. It is a set of rules for deciding when previously received content may be reused.</p>
+          </div>
+          <div class="article-meta">
+            <div><span>SUBJECT</span><strong>Performance</strong></div>
+            <div><span>READING TIME</span><strong>9 minute read</strong></div>
+            <div><span>FORMAT</span><strong>Reference guide</strong></div>
+            <div><span>LEVEL</span><strong>Intermediate</strong></div>
+          </div>
+        </div>
+      </header>
+      <div class="article-layout">
+        <aside class="article-toc" aria-label="On this page">
+          <p class="article-toc-heading">ON THIS PAGE</p>
+          <nav aria-label="Article contents"><ol><li><a href="#why">01 / Why caches exist</a></li>
+<li><a href="#freshness">02 / Freshness and Cache-Control</a></li>
+<li><a href="#validation">03 / Validation with ETag and Last-Modified</a></li>
+<li><a href="#shared">04 / The complications of shared caching</a></li>
+<li><a href="#practice">05 / Inspect what the server actually sends</a></li>
+<li><a href="#references">06 / Further reading and standards</a></li></ol></nav>
+          <p class="article-toc-extra">References link to openly available standards and documentation. <a href="#references">Jump to sources</a></p>
+        </aside>
+        <article class="prose" aria-label="The logic of HTTP caching">
+          <section id="why"><h2>Why caches exist</h2><p>Fetching a resource again can cost network time, server processing and bandwidth. HTTP caching allows a client or intermediary to reuse a stored response when doing so is permitted. A browser cache may store resources for one user's visits. A shared cache, such as one at a content delivery network (CDN), may serve multiple users.</p><p>These caches are not interchangeable. A page with private account data may be acceptable in a browser's cache but inappropriate for a cache shared between visitors. Correct response directives determine the difference.</p><figure class="figure"><div class="figure-top"><span>FIG. 04 / WHERE A RESPONSE MAY BE REUSED</span><span>CONCEPTUAL MODEL</span></div><div class="figure-flow"><div class="figure-node"><b>Browser</b><small>private cache</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>CDN</b><small>shared cache</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Origin</b><small>source service</small></div></div><figcaption class="figure-caption">The actual path varies. Some requests reach the origin directly; others are satisfied by a nearby cache.</figcaption></figure></section>
+<section id="freshness"><h2>Freshness and Cache-Control</h2><p>A cache uses HTTP metadata to determine whether a stored response is <strong>fresh</strong> and can be reused without contacting the origin. The <code>Cache-Control</code> header communicates reuse and storage rules.</p><table class="data-table"><thead><tr><th>Directive</th><th>What it expresses</th></tr></thead><tbody><tr><td>max-age=600</td><td>Permits freshness for up to 600 seconds under the applicable cache rules.</td></tr><tr><td>no-cache</td><td>Stored responses require successful validation before reuse.</td></tr><tr><td>no-store</td><td>Compliant caches must not store the response.</td></tr><tr><td>private</td><td>The response is intended for private rather than shared caches.</td></tr><tr><td>public</td><td>Explicitly allows shared-cache storage when otherwise eligible.</td></tr><tr><td>s-maxage=120</td><td>Overrides freshness calculation for shared caches.</td></tr></tbody></table><p>The header <code>Cache-Control: public, max-age=600</code> can work well for a shared, unchanging asset. It is not a safe default for every API or personalized page.</p></section>
+<section id="validation"><h2>Validation with ETag and Last-Modified</h2><p>When a cached response becomes stale, the cache may ask the server whether its stored representation is still current. An <code>ETag</code> is a validator associated with a representation. A client can send it back in an <code>If-None-Match</code> request header.</p><figure class="figure"><div class="figure-top"><span>FIG. 05 / CONDITIONAL VALIDATION</span><span>CONCEPTUAL MODEL</span></div><div class="figure-flow"><div class="figure-node"><b>Cache</b><small>If-None-Match</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Origin</b><small>compares validator</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>304</b><small>reuse stored body</small></div></div><figcaption class="figure-caption">If the selected representation remains unchanged, a 304 response can allow the client to reuse its already stored body.</figcaption></figure><p>A <code>Last-Modified</code> timestamp can also be used with <code>If-Modified-Since</code>. Validators have different precision and strength characteristics; application requirements determine which is suitable.</p><aside class="editor-note"><span class="editor-label">COMMON MISUNDERSTANDING</span><p>A <code>304 Not Modified</code> response is not a server error. It is a successful conditional response that normally has no representation body and supports reuse of previously stored data.</p></aside></section>
+<section id="shared"><h2>The complications of shared caching</h2><p>Shared caches have to determine not only <em>when</em> a stored response is fresh, but also <em>which</em> requests can reuse it. A cache key often includes the method, scheme, hostname and request target. Responses using the <code>Vary</code> header identify request fields that affect response selection, such as compression preferences.</p><p>Cookies and authorization introduce additional constraints. A response that varies by signed-in user must not accidentally be returned to another person. Cache rules for authenticated responses are more nuanced than a simple "cache on" switch.</p><p>Using a CDN also does not guarantee a performance improvement for every request. Origin distance, object size, cache-hit rate, TLS setup and other factors influence the result.</p></section>
+<section id="practice"><h2>Inspect what the server actually sends</h2><p>Start by reading the response headers. In addition to <code>Cache-Control</code>, look for <code>ETag</code>, <code>Last-Modified</code>, <code>Vary</code> and sometimes <code>Age</code>.</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>curl -I https://example.com/</code></pre></div><p>To test an ETag-based conditional request, first obtain the exact validator returned for your target resource. Then send it back in a subsequent request:</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>curl -i -H 'If-None-Match: &quot;example-etag&quot;' https://example.com/</code></pre></div><p>The validator in this command is illustrative; replace it with a value actually returned by the server. You should not expect a <code>304</code> unless the representation matches the supplied validator and the server supports that conditional exchange.</p></section>
+<section id="references"><h2>Further reading and standards</h2><ul class="reference-list"><li><a href="https://www.rfc-editor.org/rfc/rfc9111" target="_blank" rel="noopener noreferrer">RFC 9111 — HTTP Caching</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110 — HTTP Semantics</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching" target="_blank" rel="noopener noreferrer">MDN — HTTP Caching</a></li></ul></section>
+        </article>
+      </div>
+      <nav class="article-neighbors" aria-label="Other guides">
+        <a class="neighbor" href="https.html"><small>← PREVIOUS GUIDE</small><strong>How HTTPS establishes trust</strong></a>
+        <a class="neighbor" href="http.html"><small>NEXT GUIDE →</small><strong>Reading HTTP responses</strong></a>
+      </nav>
+    </main>
+    <footer class="article-footer">
+      <a class="footer-brand" href="../index.html">cloudenza<span>.</span><small>NOTES</small></a>
+      <p>Independent reference notes · Concepts over claims</p>
+      <a href="#article-content">BACK TO TOP ↑</a>
+    </footer>
+  </div>
+</body>
+</html>
