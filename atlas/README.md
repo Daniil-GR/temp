@@ -1,3 +1,42 @@
+# Atlas editorial redesign
+
+Atlas is a buildless English-language journal about geography, cartography and Earth science. Its 16 HTML pages are ready for static hosting.
+
+## Local preview
+
+```sh
+python3 -m http.server 8080 --directory atlas/site
+```
+
+Open `http://localhost:8080`. There are no package installs, build steps, API keys or runtime CDN dependencies.
+
+## Structure and editing
+
+- `site/index.html`: editorial homepage, photographic story selection and interactive globe.
+- `site/explore.html`: searchable collection, topic filters and saved stories.
+- `site/geography.html`, `cartography.html`, `earth-science.html`: themed collections.
+- `site/articles/`: eight explainers with references, image captions, contents navigation and reading progress.
+- `site/assets/css/styles.css`: responsive design, Georgia/system typography and natural colours.
+- `site/assets/js/app.js`: search, mobile menu, local reading list and article tools.
+- `site/assets/js/globe.js`: dependency-free WebGL sphere, local NASA texture, pointer/keyboard rotation, zoom and pause. Respects reduced motion, stops rendering outside the viewport, falls back to a local Earth image without WebGL. Not live satellite imagery.
+- `site/assets/photos/credits.json`: attribution, original source and reuse licence for every photograph/map; also displayed on `sources.html`.
+- `content.json`: original editorial text and metadata, retained from the earlier site.
+- `tools/render.py`: optional Python-standard-library page generator; rerun after editing content or image credits.
+- `tools/check_site.py`: local links, anchor, image-alt and credit checks.
+
+```sh
+python3 atlas/tools/render.py
+python3 atlas/tools/check_site.py
+node --check atlas/site/assets/js/app.js
+node --check atlas/site/assets/js/globe.js
+```
+
+Images are served locally as WebP. Their creators and licences are credited visibly; responsive crops and format conversion are disclosed. The globe uses a NASA Blue Marble mosaic. No tracking or external fonts. Saved stories use browser localStorage only and degrade gracefully when storage is unavailable.
+
+The existing deployment script and infrastructure configuration are unchanged. Original deployment instructions follow.
+
+---
+
 # Atlas — Earth & Place
 
 Static, English-language educational website for **atlas.dateihafen.xyz**.

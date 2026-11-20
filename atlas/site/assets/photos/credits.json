@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "great-lakes",
+    "file": "assets/photos/great-lakes.webp",
+    "title": "Sleeping Bear Dunes (221196463).jpeg",
+    "author": "Isabella Rick",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sleeping_Bear_Dunes_(221196463).jpeg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "mountain-building",
+    "file": "assets/photos/mountain-building.webp",
+    "title": "Mallnitz Hagener Hütte Panorama NO 01.jpg",
+    "author": "Uoaei1",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mallnitz_Hagener_H%C3%BCtte_Panorama_NO_01.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "ocean-currents",
+    "file": "assets/photos/ocean-currents.webp",
+    "title": "Waves at La Corniche.jpg",
+    "author": "Christian Ferrer",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Waves_at_La_Corniche.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "rivers-and-deltas",
+    "file": "assets/photos/rivers-and-deltas.webp",
+    "title": "QeshmIsland NASA.jpg",
+    "author": "NASA image using data provided courtesy of the University of Maryland’s Global Land Cover Facility",
+    "license": "Public domain",
+    "license_url": "https://commons.wikimedia.org/wiki/Commons:Licensing",
+    "source": "https://commons.wikimedia.org/wiki/File:QeshmIsland_NASA.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "tectonic-plates",
+    "file": "assets/photos/tectonic-plates.webp",
+    "title": "Landscape during Laugavegur hiking trail 2-CA reduced.jpg",
+    "author": "Chmee2/Valtameri",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Landscape_during_Laugavegur_hiking_trail_2-CA_reduced.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "evolution-of-maps",
+    "file": "assets/photos/evolution-of-maps.webp",
+    "title": "Theatrum Orbis Terrarum, by Abraham Ortelius, World, 1572.jpg",
+    "author": "Abraham Ortelius",
+    "license": "Public domain",
+    "license_url": "https://commons.wikimedia.org/wiki/Commons:Licensing",
+    "source": "https://commons.wikimedia.org/wiki/File:Theatrum_Orbis_Terrarum,_by_Abraham_Ortelius,_World,_1572.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "topographic-maps",
+    "file": "assets/photos/topographic-maps.webp",
+    "title": "United States Geological Survey Map Mount Rainier, Published 1971.jpg",
+    "author": "United States Department of the Interior Geological Survey",
+    "license": "Public domain",
+    "license_url": "https://commons.wikimedia.org/wiki/Commons:Licensing",
+    "source": "https://commons.wikimedia.org/wiki/File:United_States_Geological_Survey_Map_Mount_Rainier,_Published_1971.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  },
+  {
+    "slug": "earth-from-space",
+    "file": "assets/photos/earth-from-space.webp",
+    "title": "Blue Marble Western Hemisphere.jpg",
+    "author": "NASA images by Reto Stöckli, based on data from NASA and NOAA. Instrument: Terra - MODIS",
+    "license": "Public domain",
+    "license_url": "https://commons.wikimedia.org/wiki/Commons:Licensing",
+    "source": "https://commons.wikimedia.org/wiki/File:Blue_Marble_Western_Hemisphere.jpg",
+    "modified": "Converted to WebP and resized; displayed with responsive crops."
+  }
+]
