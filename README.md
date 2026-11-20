@@ -1,10 +1,15 @@
 # Cloudenza Notes
 
-A small, real, English-language informational website about web fundamentals: DNS, TLS and HTTP caching. Static files only; no tracking, analytics, fake uptime figures or invented services.
+A small, real, English-language editorial website about web fundamentals: DNS, TLS, HTTP caching and response diagnostics. Static files only; no tracking, analytics, fake uptime figures or invented services.
 
 ## Files
 
-- `site/index.html` — content and layout
+- `site/index.html` — editorial landing page and guide directory
+- `site/articles/dns.html` — DNS resolution and records
+- `site/articles/https.html` — TLS, certificates, SNI and ALPN
+- `site/articles/caching.html` — cache freshness, validation and shared caches
+- `site/articles/http.html` — HTTP methods, responses and diagnostics
+- `site/assets/article.css` and `site/assets/article.js` — responsive article layouts, theme, table of contents, progress indicator and copy buttons
 - `site/assets/style.css` — responsive styles
 - `site/assets/app.js` — page search, theme and origin-response check
 - `deploy.sh` — inspect the Selfsteal layout, install site files and optionally activate a separate nginx TLS virtual host after you supply a valid certificate
@@ -12,7 +17,7 @@ A small, real, English-language informational website about web fundamentals: DN
 
 ## Editorial scope
 
-The four concise articles combine definitions, practical examples and links to primary RFCs. They are intentionally not presented as original research, laboratory measurements or commercial service reports. The browser check reports a single observed request, not ongoing uptime.
+Four dedicated article pages, each around 750–900 words, combine definitions, practical examples, interactive reading navigation and links to primary RFCs. They are intentionally not presented as original research, laboratory measurements or commercial service reports. The browser check reports a single observed request, not ongoing uptime.
 
 ## Updating existing deployed files
 
@@ -23,6 +28,8 @@ cd /root/temp
 git pull --ff-only
 sudo sh deploy.sh install
 ```
+
+Then test the new pages over HTTPS using the existing site hostname: `/articles/dns.html`, `/articles/https.html`, `/articles/caching.html`, `/articles/http.html`.
 
 Only static files are updated; existing nginx, TLS, DNS and Reality configurations remain unchanged. The installer backs up the prior site directory before replacing its files.
 
