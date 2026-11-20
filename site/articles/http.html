@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Understand HTTP methods, status code families, headers and network troubleshooting with realistic curl examples.">
+  <meta name="theme-color" content="#f5f3ee">
+  <title>Reading HTTP responses — Cloudenza Notes</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/article.css">
+  <script defer src="../assets/article.js"></script>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <a class="skip" href="#article-content">Skip to article</a>
+  <div class="article-shell">
+    <header class="article-header">
+      <a class="brand" href="../index.html" aria-label="Cloudenza Notes home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>cloudenza<span class="brand-dot">.</span><small>NOTES / WEB REFERENCE</small></span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="../index.html#library">Library</a>
+        <a href="../index.html#toolkit">Tools</a>
+        <a href="../index.html#about">About</a>
+      </nav>
+      <div class="article-utility">
+        <a class="article-back" href="../index.html#library">← All guides</a>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme"><span class="theme-icon" aria-hidden="true">◐</span></button>
+      </div>
+    </header>
+    <main id="article-content">
+      <header class="article-hero">
+        <nav class="article-breadcrumb" aria-label="Breadcrumb">
+          <a href="../index.html">Cloudenza Notes</a> <span>/</span>
+          <a href="../index.html#library">Library</a> <span>/</span>
+          Protocols
+        </nav>
+        <div class="article-hero-grid">
+          <div>
+            <div class="article-category">FIELD GUIDE 04 / PROTOCOLS</div>
+            <h1>Reading HTTP responses<span class="accent">.</span></h1>
+            <p class="article-deck">A response code is a summary, not a diagnosis. Learn to read the rest of the message before deciding what went wrong.</p>
+          </div>
+          <div class="article-meta">
+            <div><span>SUBJECT</span><strong>Protocols</strong></div>
+            <div><span>READING TIME</span><strong>9 minute read</strong></div>
+            <div><span>FORMAT</span><strong>Reference guide</strong></div>
+            <div><span>LEVEL</span><strong>Foundational</strong></div>
+          </div>
+        </div>
+      </header>
+      <div class="article-layout">
+        <aside class="article-toc" aria-label="On this page">
+          <p class="article-toc-heading">ON THIS PAGE</p>
+          <nav aria-label="Article contents"><ol><li><a href="#anatomy">01 / The anatomy of a request and response</a></li>
+<li><a href="#methods">02 / Methods describe the requested action</a></li>
+<li><a href="#families">03 / The five status-code families</a></li>
+<li><a href="#gateway">04 / Why 502 and 504 are different</a></li>
+<li><a href="#headers">05 / Headers worth knowing</a></li>
+<li><a href="#references">06 / Further reading and standards</a></li></ol></nav>
+          <p class="article-toc-extra">References link to openly available standards and documentation. <a href="#references">Jump to sources</a></p>
+        </aside>
+        <article class="prose" aria-label="Reading HTTP responses">
+          <section id="anatomy"><h2>The anatomy of a request and response</h2><p>HTTP is an application-layer protocol built around requests and responses. A request includes a method, target and header fields, and may include content. The response contains a status code, header fields and, when appropriate, a message body.</p><p>For example, a browser might request a document with <code>GET /</code>. The server can answer <code>200 OK</code> and identify the response format using <code>Content-Type: text/html</code>. Other fields can describe caching, content encoding or redirects.</p><figure class="figure"><div class="figure-top"><span>FIG. 06 / ONE EXCHANGE</span><span>CONCEPTUAL MODEL</span></div><div class="figure-flow"><div class="figure-node"><b>Client</b><small>GET /page</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Server</b><small>processes request</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Response</b><small>200 + headers + body</small></div></div><figcaption class="figure-caption">An application may exchange many such messages to load a complete page, including images, scripts and stylesheets.</figcaption></figure></section>
+<section id="methods"><h2>Methods describe the requested action</h2><p>The HTTP method expresses what the client wants to do. <strong>GET</strong> requests a representation of a resource. <strong>HEAD</strong> requests metadata corresponding to GET without transferring the response content. <strong>POST</strong> submits data for processing; <strong>PUT</strong> replaces or creates the target resource according to its defined semantics; and <strong>DELETE</strong> requests removal of the association with a target resource.</p><p>Methods have additional properties. A method is called <em>safe</em> when its defined semantics do not request a state change; GET and HEAD are safe. A method is <em>idempotent</em> when repeating the same request has the same intended effect as making it once. These properties guide retry behavior, although an implementation can still perform incidental activities such as logging.</p><aside class="editor-note"><span class="editor-label">WHY HEAD IS NOT A COMPLETE HEALTH CHECK</span><p>A HEAD request may produce a different result from GET on some applications. It is a convenient quick test for headers, but confirming that a page actually renders requires fetching its content.</p></aside></section>
+<section id="families"><h2>The five status-code families</h2><table class="data-table"><thead><tr><th>Range</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td>1xx</td><td>Informational or interim response</td><td>100 Continue</td></tr><tr><td>2xx</td><td>Successful handling</td><td>200 OK, 204 No Content</td></tr><tr><td>3xx</td><td>Redirection or related action</td><td>301 Moved Permanently</td></tr><tr><td>4xx</td><td>Client-related error class</td><td>404 Not Found, 429 Too Many Requests</td></tr><tr><td>5xx</td><td>Server-related error class</td><td>500 Internal Server Error, 502 Bad Gateway</td></tr></tbody></table><p>The first digit is a useful classification, not a complete root-cause analysis. In practice, a 404 can result from a missing file, an incorrect application route or a reverse-proxy rule that selects the wrong service.</p></section>
+<section id="gateway"><h2>Why 502 and 504 are different</h2><p>Reverse proxies and gateways often sit between a client and the application server. A <strong>502 Bad Gateway</strong> means a gateway or proxy received an invalid response from an upstream server. A <strong>504 Gateway Timeout</strong> means the gateway did not receive a timely response from an upstream server it needed to complete the request.</p><p>Both can involve upstream trouble, but the codes describe different observations. Start by checking whether the gateway can resolve and connect to the upstream, whether the application is serving requests, and whether timeout thresholds are appropriate.</p><p>A <strong>503 Service Unavailable</strong> is different again: it indicates that the server is currently unable to handle the request, often because of temporary overload or maintenance. A <code>Retry-After</code> header can provide a suggested delay when the server supplies one.</p></section>
+<section id="headers"><h2>Headers worth knowing</h2><p>Headers provide context that the status code cannot convey alone. <code>Content-Type</code> identifies the media type; <code>Content-Encoding</code> identifies content codings such as gzip or br; <code>Location</code> supplies a redirect destination; and <code>Cache-Control</code> tells caches how they may store and reuse a response.</p><p>Response header names are case-insensitive. Their specific values, however, have syntax and semantics defined by the relevant specifications.</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>curl -sS -D - -o /dev/null https://example.com/
+curl -sS -L -I https://example.com/</code></pre></div><p>The first command displays response headers while discarding the content body. The second follows redirects and shows headers from the requests involved. To diagnose a real incident, inspect the requested hostname and path, resolve DNS separately, confirm TLS, and then compare response headers with application logs.</p></section>
+<section id="references"><h2>Further reading and standards</h2><ul class="reference-list"><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110 — HTTP Semantics</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9112" target="_blank" rel="noopener noreferrer">RFC 9112 — HTTP/1.1</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status" target="_blank" rel="noopener noreferrer">MDN — HTTP Response Status Codes</a></li></ul></section>
+        </article>
+      </div>
+      <nav class="article-neighbors" aria-label="Other guides">
+        <a class="neighbor" href="caching.html"><small>← PREVIOUS GUIDE</small><strong>The logic of HTTP caching</strong></a>
+        <a class="neighbor" href="dns.html"><small>NEXT GUIDE →</small><strong>Understanding DNS</strong></a>
+      </nav>
+    </main>
+    <footer class="article-footer">
+      <a class="footer-brand" href="../index.html">cloudenza<span>.</span><small>NOTES</small></a>
+      <p>Independent reference notes · Concepts over claims</p>
+      <a href="#article-content">BACK TO TOP ↑</a>
+    </footer>
+  </div>
+</body>
+</html>
