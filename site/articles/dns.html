@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="How DNS resolution, caching, authoritative name servers and record types work, with practical dig examples.">
+  <meta name="theme-color" content="#f5f3ee">
+  <title>Understanding DNS — Cloudenza Notes</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/article.css">
+  <script defer src="../assets/article.js"></script>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <a class="skip" href="#article-content">Skip to article</a>
+  <div class="article-shell">
+    <header class="article-header">
+      <a class="brand" href="../index.html" aria-label="Cloudenza Notes home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>cloudenza<span class="brand-dot">.</span><small>NOTES / WEB REFERENCE</small></span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="../index.html#library">Library</a>
+        <a href="../index.html#toolkit">Tools</a>
+        <a href="../index.html#about">About</a>
+      </nav>
+      <div class="article-utility">
+        <a class="article-back" href="../index.html#library">← All guides</a>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme"><span class="theme-icon" aria-hidden="true">◐</span></button>
+      </div>
+    </header>
+    <main id="article-content">
+      <header class="article-hero">
+        <nav class="article-breadcrumb" aria-label="Breadcrumb">
+          <a href="../index.html">Cloudenza Notes</a> <span>/</span>
+          <a href="../index.html#library">Library</a> <span>/</span>
+          Networking
+        </nav>
+        <div class="article-hero-grid">
+          <div>
+            <div class="article-category">FIELD GUIDE 01 / NETWORKING</div>
+            <h1>Understanding DNS<span class="accent">.</span></h1>
+            <p class="article-deck">From a name in the address bar to an IP address: the lookup process, the records involved and the reasons DNS changes sometimes take time.</p>
+          </div>
+          <div class="article-meta">
+            <div><span>SUBJECT</span><strong>Networking</strong></div>
+            <div><span>READING TIME</span><strong>8 minute read</strong></div>
+            <div><span>FORMAT</span><strong>Reference guide</strong></div>
+            <div><span>LEVEL</span><strong>Foundational</strong></div>
+          </div>
+        </div>
+      </header>
+      <div class="article-layout">
+        <aside class="article-toc" aria-label="On this page">
+          <p class="article-toc-heading">ON THIS PAGE</p>
+          <nav aria-label="Article contents"><ol><li><a href="#a-request">01 / What DNS is responsible for</a></li>
+<li><a href="#hierarchy">02 / Resolvers and authoritative answers</a></li>
+<li><a href="#records">03 / The records you will encounter</a></li>
+<li><a href="#ttl">04 / TTL, caching and changes</a></li>
+<li><a href="#tools">05 / A small DNS investigation</a></li>
+<li><a href="#references">06 / Further reading and standards</a></li></ol></nav>
+          <p class="article-toc-extra">References link to openly available standards and documentation. <a href="#references">Jump to sources</a></p>
+        </aside>
+        <article class="prose" aria-label="Understanding DNS">
+          <section id="a-request"><h2>What DNS is responsible for</h2><p>The Domain Name System (DNS) is a distributed naming system. It stores structured records that allow applications to discover addresses and other information associated with domain names. When someone enters <code>example.com</code> into a browser, the browser ultimately needs an address it can connect to.</p><p>DNS answers that naming question; it does not establish the network connection, verify that a website is healthy or guarantee that a returned address is reachable. A site can resolve correctly while its server is offline.</p><figure class="figure"><div class="figure-top"><span>FIG. 01 / FROM NAME TO ADDRESS</span><span>CONCEPTUAL MODEL</span></div><div class="figure-flow"><div class="figure-node"><b>Browser</b><small>asks for a name</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Resolver</b><small>looks up records</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Address</b><small>connection attempted</small></div></div><figcaption class="figure-caption">Simplified resolution path. The actual process can include local caches and multiple authoritative servers.</figcaption></figure><p>This distinction is useful in troubleshooting: a failed DNS lookup and a failed TCP or TLS connection require different investigations.</p></section>
+<section id="hierarchy"><h2>Resolvers and authoritative answers</h2><p>Most devices use a <strong>recursive resolver</strong> supplied by a network, configured manually or offered as part of an encrypted DNS service. A resolver tries to answer from its cache first. If it needs fresh information, it can follow the DNS hierarchy.</p><ol><li>The resolver discovers which servers are responsible for a top-level domain, such as <code>.com</code>.</li><li>It follows the delegation toward the authoritative name servers for the requested zone.</li><li>An authoritative server supplies the records it is responsible for, or indicates that the requested name or record does not exist.</li><li>The resolver returns an answer to the client and may cache it, subject to applicable rules.</li></ol><p>The resolver does not generally contact the entire hierarchy for every query: caching avoids repeated work. The result returned to a browser may also be influenced by local host files, operating-system caches and network policy.</p></section>
+<section id="records"><h2>The records you will encounter</h2><table class="data-table"><thead><tr><th>Type</th><th>Purpose</th><th>Typical use</th></tr></thead><tbody><tr><td>A</td><td>Maps a name to an IPv4 address</td><td>Web services using IPv4</td></tr><tr><td>AAAA</td><td>Maps a name to an IPv6 address</td><td>Web services using IPv6</td></tr><tr><td>CNAME</td><td>Aliases one DNS name to another</td><td>Pointing a hostname at another name</td></tr><tr><td>MX</td><td>Identifies mail exchange hosts</td><td>Email delivery</td></tr><tr><td>TXT</td><td>Stores text used by many protocols</td><td>Email policy and domain verification</td></tr><tr><td>NS</td><td>Identifies name servers for a zone</td><td>Delegation</td></tr><tr><td>CAA</td><td>Indicates which CAs may issue certificates</td><td>Certificate issuance policy</td></tr></tbody></table><p>One subtlety: a normal <code>CNAME</code> record cannot coexist with unrelated record data at the same owner name under standard DNS rules. Some DNS providers implement flattening features to make apex-domain configuration more convenient; those features are not ordinary CNAME records.</p></section>
+<section id="ttl"><h2>TTL, caching and changes</h2><p>DNS responses include a <strong>time to live (TTL)</strong>, which tells caching resolvers how long record data may be reused. An A record with a TTL of 300 seconds may remain in compliant caches for up to five minutes after the response is obtained, though local policy, caching layers and queries made at different times can produce different observations.</p><aside class="editor-note"><span class="editor-label">PRACTICAL EXAMPLE</span><p>If an A record was cached just before you changed it, a resolver may continue serving the previous address until that cached response expires. Lowering a TTL only after the old record has already been cached does not retroactively shorten its lifetime.</p></aside><p>Negative answers can be cached too. That is why creating a previously nonexistent hostname can still appear delayed to some users even when the new record is already visible at the authoritative server.</p></section>
+<section id="tools"><h2>A small DNS investigation</h2><p>The <code>dig</code> command is a useful starting point on Unix-like systems. Test the public documentation domain rather than assuming that your own service must return a particular value.</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>dig example.com A +noall +answer
+dig example.com AAAA +noall +answer
+dig example.com NS +short</code></pre></div><p>The first two commands show address records and the remaining TTL as seen by the resolver. The third lists name-server records. To ask a specific recursive resolver, prefix a query with its address:</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>dig @1.1.1.1 example.com A +noall +answer</code></pre></div><p>Compare answers only after checking the record type, resolver and remaining TTL. A difference does not automatically indicate an attack or malfunction.</p><h3>Do not confuse resolution with reachability</h3><p>Once a name resolves, test network connectivity separately. An HTTPS request can fail because of TLS validation, firewalls, routing, a closed port or an unhealthy web service even when DNS is correct.</p></section>
+<section id="references"><h2>Further reading and standards</h2><p>These references describe the underlying protocols; they are not endorsements of any particular DNS provider.</p><ul class="reference-list"><li><a href="https://www.rfc-editor.org/rfc/rfc1034" target="_blank" rel="noopener noreferrer">RFC 1034 — Domain Names: Concepts and Facilities</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc1035" target="_blank" rel="noopener noreferrer">RFC 1035 — Domain Names: Implementation and Specification</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc2308" target="_blank" rel="noopener noreferrer">RFC 2308 — Negative Caching of DNS Queries</a></li><li><a href="https://www.iana.org/domains/root" target="_blank" rel="noopener noreferrer">IANA — Root Zone Management</a></li></ul></section>
+        </article>
+      </div>
+      <nav class="article-neighbors" aria-label="Other guides">
+        <a class="neighbor" href="http.html"><small>← PREVIOUS GUIDE</small><strong>Reading HTTP responses</strong></a>
+        <a class="neighbor" href="https.html"><small>NEXT GUIDE →</small><strong>How HTTPS establishes trust</strong></a>
+      </nav>
+    </main>
+    <footer class="article-footer">
+      <a class="footer-brand" href="../index.html">cloudenza<span>.</span><small>NOTES</small></a>
+      <p>Independent reference notes · Concepts over claims</p>
+      <a href="#article-content">BACK TO TOP ↑</a>
+    </footer>
+  </div>
+</body>
+</html>
