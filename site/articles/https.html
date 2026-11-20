@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="A practical guide to TLS 1.3 handshakes, certificates, hostname validation, ALPN, SNI and browser security.">
+  <meta name="theme-color" content="#f5f3ee">
+  <title>How HTTPS establishes trust — Cloudenza Notes</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/article.css">
+  <script defer src="../assets/article.js"></script>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <a class="skip" href="#article-content">Skip to article</a>
+  <div class="article-shell">
+    <header class="article-header">
+      <a class="brand" href="../index.html" aria-label="Cloudenza Notes home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>cloudenza<span class="brand-dot">.</span><small>NOTES / WEB REFERENCE</small></span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="../index.html#library">Library</a>
+        <a href="../index.html#toolkit">Tools</a>
+        <a href="../index.html#about">About</a>
+      </nav>
+      <div class="article-utility">
+        <a class="article-back" href="../index.html#library">← All guides</a>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme"><span class="theme-icon" aria-hidden="true">◐</span></button>
+      </div>
+    </header>
+    <main id="article-content">
+      <header class="article-hero">
+        <nav class="article-breadcrumb" aria-label="Breadcrumb">
+          <a href="../index.html">Cloudenza Notes</a> <span>/</span>
+          <a href="../index.html#library">Library</a> <span>/</span>
+          Security
+        </nav>
+        <div class="article-hero-grid">
+          <div>
+            <div class="article-category">FIELD GUIDE 02 / SECURITY</div>
+            <h1>How HTTPS establishes trust<span class="accent">.</span></h1>
+            <p class="article-deck">A successful HTTPS connection is the result of several checks, not just an encryption icon in the address bar.</p>
+          </div>
+          <div class="article-meta">
+            <div><span>SUBJECT</span><strong>Security</strong></div>
+            <div><span>READING TIME</span><strong>9 minute read</strong></div>
+            <div><span>FORMAT</span><strong>Reference guide</strong></div>
+            <div><span>LEVEL</span><strong>Foundational</strong></div>
+          </div>
+        </div>
+      </header>
+      <div class="article-layout">
+        <aside class="article-toc" aria-label="On this page">
+          <p class="article-toc-heading">ON THIS PAGE</p>
+          <nav aria-label="Article contents"><ol><li><a href="#layers">01 / HTTP and the protected connection</a></li>
+<li><a href="#handshake">02 / Inside a TLS 1.3 handshake</a></li>
+<li><a href="#certificates">03 / What certificate validation checks</a></li>
+<li><a href="#sni-alpn">04 / SNI, ALPN and shared servers</a></li>
+<li><a href="#inspect">05 / Inspect a real HTTPS connection</a></li>
+<li><a href="#references">06 / Further reading and standards</a></li></ol></nav>
+          <p class="article-toc-extra">References link to openly available standards and documentation. <a href="#references">Jump to sources</a></p>
+        </aside>
+        <article class="prose" aria-label="How HTTPS establishes trust">
+          <section id="layers"><h2>HTTP and the protected connection</h2><p>HTTP defines the messages used to request and deliver web resources. HTTPS is HTTP over a transport protected using Transport Layer Security (TLS). The protection aims to prevent observers on the network from reading or silently altering application data and to authenticate the server.</p><p>For a typical HTTPS connection over TCP, a browser establishes a TCP connection and performs a TLS handshake before sending ordinary HTTP messages. HTTP/3 uses QUIC, which incorporates TLS 1.3 differently, so that specific TCP sequence is not universal.</p><figure class="figure"><div class="figure-top"><span>FIG. 02 / LAYERS OF A VISIT</span><span>CONCEPTUAL MODEL</span></div><div class="figure-flow"><div class="figure-node"><b>DNS</b><small>find an address</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>TLS</b><small>authenticate & protect</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>HTTP</b><small>exchange content</small></div></div><figcaption class="figure-caption">A conceptual view of common HTTPS over TCP; connection setup and protocol negotiation are separate operations.</figcaption></figure></section>
+<section id="handshake"><h2>Inside a TLS 1.3 handshake</h2><p>A TLS handshake negotiates the security parameters that both sides will use. In TLS 1.3, the client begins with a <code>ClientHello</code> containing supported cryptographic options and key-exchange information. The server responds with a <code>ServerHello</code> selecting compatible parameters.</p><p>The peers use their key shares to derive shared traffic secrets. The server presents authentication information, normally including its certificate chain and a cryptographic signature proving possession of an appropriate private key. After the handshake has been verified, protected application data can flow.</p><ol><li><strong>Agreement:</strong> the peers establish compatible cryptographic parameters and key material.</li><li><strong>Authentication:</strong> the client checks the server certificate and associated handshake proof.</li><li><strong>Protection:</strong> application messages use session keys derived for the connection.</li></ol><p>TLS 1.3 reduces the number of handshake round trips compared with earlier versions, but network distance and application behavior still influence the experience.</p></section>
+<section id="certificates"><h2>What certificate validation checks</h2><p>A certificate binds a public key to identifying information, including permitted DNS names. Modern browsers check that the requested hostname appears in the certificate's <strong>Subject Alternative Name (SAN)</strong> extension, that the certificate is within its validity interval and that the issuing chain can be linked to a trusted root under the browser's policy.</p><p>For example, a certificate valid only for <code>www.example.com</code> does not automatically cover <code>api.example.com</code>. A wildcard such as <code>*.example.com</code> can cover direct subdomains under typical hostname-matching rules, but not arbitrary levels beneath them.</p><aside class="editor-note"><span class="editor-label">WHAT A PADLOCK DOES — AND DOES NOT — MEAN</span><p>HTTPS protects a connection to a validated hostname. It does not independently verify whether the website's articles, commercial claims or downloadable files are trustworthy.</p></aside><p>Browsers and operating systems also apply policies around revoked certificates, certificate transparency and transport security. Exact behavior can differ by platform and certificate type.</p></section>
+<section id="sni-alpn"><h2>SNI, ALPN and shared servers</h2><p>A single IP address may host many HTTPS websites. The client can supply a hostname in the TLS <strong>Server Name Indication (SNI)</strong> extension so the server can select an appropriate virtual host and certificate. Ordinary SNI is visible in the ClientHello on conventional TLS connections; newer Encrypted ClientHello (ECH) mechanisms aim to protect more of that information when supported.</p><p><strong>Application-Layer Protocol Negotiation (ALPN)</strong> is different: it indicates which application protocol should be used inside the secure connection, such as <code>http/1.1</code> or <code>h2</code>. ALPN does not select the domain, and SNI does not replace certificate validation.</p><figure class="figure"><div class="figure-top"><span>FIG. 03 / TWO NEGOTIATION SIGNALS</span><span>CONCEPTUAL MODEL</span></div><div class="figure-flow"><div class="figure-node"><b>Hostname</b><small>SNI / selection</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Certificate</b><small>identity validation</small></div><span class="figure-arrow" aria-hidden="true">→</span><div class="figure-node"><b>Protocol</b><small>ALPN / HTTP version</small></div></div><figcaption class="figure-caption">The browser may send SNI and ALPN information during the handshake. They serve separate purposes.</figcaption></figure></section>
+<section id="inspect"><h2>Inspect a real HTTPS connection</h2><p>The curl command can reveal the negotiated TLS version, certificate verification outcome and HTTP response. The flags below are suitable for publicly available demonstration websites.</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>curl -Iv https://example.com/</code></pre></div><p>Use <code>-I</code> to request headers and <code>-v</code> for connection diagnostics. If the certificate is invalid, do not use <code>-k</code> as a routine fix; that flag disables important verification.</p><p>To inspect a presented certificate chain using OpenSSL, connect with a matching SNI hostname:</p><div class="code-example"><div class="code-example-title"><strong>TERMINAL / EXAMPLE</strong><button class="code-copy" type="button">Copy</button></div><pre><code>openssl s_client -connect example.com:443 -servername example.com -showcerts</code></pre></div><p>This command displays handshake details and certificates, but do not assume that merely printing certificates performs every validation step a browser would apply.</p></section>
+<section id="references"><h2>Further reading and standards</h2><ul class="reference-list"><li><a href="https://www.rfc-editor.org/rfc/rfc8446" target="_blank" rel="noopener noreferrer">RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc6066" target="_blank" rel="noopener noreferrer">RFC 6066 — TLS Extensions (including SNI)</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7301" target="_blank" rel="noopener noreferrer">RFC 7301 — TLS Application-Layer Protocol Negotiation</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Transport_Layer_Security" target="_blank" rel="noopener noreferrer">MDN — Transport Layer Security</a></li></ul></section>
+        </article>
+      </div>
+      <nav class="article-neighbors" aria-label="Other guides">
+        <a class="neighbor" href="dns.html"><small>← PREVIOUS GUIDE</small><strong>Understanding DNS</strong></a>
+        <a class="neighbor" href="caching.html"><small>NEXT GUIDE →</small><strong>The logic of HTTP caching</strong></a>
+      </nav>
+    </main>
+    <footer class="article-footer">
+      <a class="footer-brand" href="../index.html">cloudenza<span>.</span><small>NOTES</small></a>
+      <p>Independent reference notes · Concepts over claims</p>
+      <a href="#article-content">BACK TO TOP ↑</a>
+    </footer>
+  </div>
+</body>
+</html>
