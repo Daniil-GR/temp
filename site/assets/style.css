@@ -104,6 +104,12 @@ kbd{background:var(--surface2);color:var(--muted);border:1px solid var(--line);b
 .read-content p{color:var(--muted);font-size:14px;line-height:1.95}
 .read-content p strong{color:var(--ink)}
 .read-content .read-lead{font-size:18px;line-height:1.65;color:var(--ink);margin-bottom:18px}
+.read-content .reading-subtitle{font-size:22px;font-weight:600;letter-spacing:-.7px;line-height:1.35;margin:26px 0 11px}
+.learning-steps{list-style:none;counter-reset:reading-step;padding:0;margin:17px 0 23px;border-top:1px solid var(--line)}
+.learning-steps li{counter-increment:reading-step;position:relative;padding:12px 8px 12px 43px;border-bottom:1px solid var(--line);color:var(--muted);font-size:13px;line-height:1.7}
+.learning-steps li::before{content:"0" counter(reading-step);position:absolute;left:4px;top:13px;color:var(--accent);font:700 10px var(--text);letter-spacing:1px}
+.learning-steps strong{color:var(--ink)}
+
 .read-content code,.status-table code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--surface2);border-radius:3px;padding:2px 5px;color:var(--ink);font-size:.9em}
 .inline-note{border-left:3px solid var(--accent);padding:14px 20px;margin:23px 0;background:var(--surface)}
 .inline-note span{display:block;font:700 10px var(--text);letter-spacing:1.2px;color:var(--accent);margin-bottom:9px}
